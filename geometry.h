@@ -20,49 +20,16 @@ protected:
     double m_frequency;
     std::pair<double,double> collinear;
     std::pair<double,double> m_D_x;
-    double function(double x);
+    double function(double x) const;
 };
 
 class segment : public graph
 {
 public:
     segment(Point A, Point B);
-    double getLength();
-    double getAngle(segment* line)
-    {
-        Point A = line->getVertices().first;
-        Point B = line->getVertices().second;
-        std::pair<double,double> firstV;
-        std::pair<double,double> secondV;
-        if(m_A.x == A.x && m_A.y == A.y)
-        {
-            firstV = std::make_pair(m_B.x-m_A.x,m_B.y-m_A.y);
-            secondV = std::make_pair(B.x-A.x,B.y-A.y);
-        }
-        else if(m_B.x == B.x && m_B.y == B.y)
-        {
-            firstV = std::make_pair(m_A.x-m_B.x,m_A.y-m_B.y);
-            secondV = std::make_pair(A.x-B.x,A.y-B.y);
-        }
-        else if(m_A.x == B.x && m_A.y == B.y)
-        {
-            firstV = std::make_pair(m_B.x-m_A.x,m_B.y-m_A.y);
-            secondV = std::make_pair(A.x-B.x,A.y-B.y);
-        }
-        else if(m_B.x == A.x && m_B.y == A.y)
-        {
-            firstV = std::make_pair(m_A.x-m_B.x,m_A.y-m_B.y);
-            secondV = std::make_pair(B.x-A.x,B.y-A.y);
-        }
-        else{
-            std::cout<<"does not intersect"<<std::endl;
-            return 0;
-        }
-
-        double tmp = firstV.first*secondV.first + firstV.second*secondV.second;
-        return acos(tmp/(m_length*line->getLength()));
-    }
-    std::pair<Point,Point> getVertices(){return std::make_pair(m_A,m_B);}
+    double getLength() const;
+    double getAngle(segment* line) const;
+    std::pair<Point,Point> getVertices();
 private:
     double m_length;
     Point m_A; Point m_B;
@@ -74,6 +41,7 @@ public:
 
     std::vector<Point> getGraph();
     Point getCenter();
+    std::vector<Point> getVertices();
 
     virtual double getSquare() = 0;
 protected:
@@ -91,11 +59,12 @@ public:
     triangle(Point A, Point B, Point C);
     virtual ~triangle() = default;
 
-    double getSquare();
+    double getSquare() override;
 };
+
 class quadrilateral : public figure{
 public:
     quadrilateral(Point A,Point B, Point C, Point D);
-    double getSquare();
+    double getSquare() override;
 };
 #endif //GEOMETRY_LIBRARY_H
