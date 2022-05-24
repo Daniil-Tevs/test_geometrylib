@@ -3,7 +3,7 @@
 graph::graph( Point A, Point B, std::pair<double,double> D_x)
 {
     m_D_x = D_x;
-    m_frequency = 1; M_0 = {0,0};
+    M_0 = {0,0};
     if(A.x==B.x && A.y==B.y) { std::cerr << "Error: equal points" << std::endl; collinear = {0,0};}
     if(B.x>A.x) {
         M_0 = A;
@@ -18,8 +18,13 @@ graph::graph( Point A, Point B, std::pair<double,double> D_x)
         for(double i = D_x.first ;i<=D_x.second;i+=m_frequency)
             m_points.push_back({double(i),function(i)});
     else
-        for(double i = D_x.first ;i<=D_x.second;i+=m_frequency)
+    {
+        m_D_x.first = (A.y<=B.y)?A.y:B.y;
+        m_D_x.second = (A.y>=B.y)?A.y:B.y;
+        for(double i = m_D_x.first ;i<=m_D_x.second;i+=m_frequency)
             m_points.push_back({0,i});
+    }
+
 }
 
 std::vector<Point> graph::getGraph(){return m_points;}
@@ -83,6 +88,12 @@ std::pair<Point,Point> segment::getVertices(){return std::make_pair(m_A,m_B);}
 
 
 std::vector<Point> figure::getGraph(){return m_points;}
+double figure::getPerimeter(){
+    double sum = 0;
+    for(auto& i : m_sides)
+        sum += i->getLength();
+    return sum;
+}
 void figure::setFrequency(double frequency)
 {
     m_frequency = abs(frequency);
@@ -90,13 +101,18 @@ void figure::setFrequency(double frequency)
         i->setFrequency(m_frequency);
     m_points.clear();
     for(auto& i : m_sides)
-        for(auto&j : i->getGraph())
+        for(auto& j : i->getGraph())
             m_points.push_back(j);
+    for(auto& i : m_vertices)
+        m_points.push_back(i);
     for(int i=0;i<m_points.size();i++)
         for(int j=i+1;j<m_points.size();j++) {
             if (m_points[i].x >= m_points[j].x)
                 std::swap(m_points[i], m_points[j]);
-            if (m_points[i].x == m_points[j].x && m_points[i].y == m_points[j].y) {
+        }
+    for(int i=0;i<m_points.size();i++)
+        for(int j=i+1;j<m_points.size();j++) {
+            if (m_points[i] == m_points[j]) {
                 m_points.erase(m_points.begin() + j);
                 i--;break;
             }
@@ -117,15 +133,17 @@ triangle::triangle(Point A, Point B, Point C)
     for(auto& i : m_sides)
         for(auto&j : i->getGraph())
             m_points.push_back(j);
+    for(auto& i : m_vertices)
+        m_points.push_back(i);
+    std::sort(m_points.begin(), m_points.end());
     for(int i=0;i<m_points.size();i++)
         for(int j=i+1;j<m_points.size();j++) {
-            if (m_points[i].x >= m_points[j].x)
-                std::swap(m_points[i], m_points[j]);
-            if (m_points[i].x == m_points[j].x && m_points[i].y == m_points[j].y) {
+            if (m_points[i] == m_points[j]) {
                 m_points.erase(m_points.begin() + j);
-                i--;break;
             }
         }
+    for(auto& i : m_points)
+        m_base.push_back(i);
 }
 double triangle::getSquare()
 {
@@ -150,22 +168,67 @@ quadrilateral::quadrilateral(Point A,Point B, Point C, Point D)
     m_sides.push_back(new segment(B,C));
     m_sides.push_back(new segment(C,D));
     m_sides.push_back(new segment(A,D));
+    for(auto& i : m_vertices)
+        m_points.push_back(i);
     for(auto& i : m_sides)
-        for(auto&j : i->getGraph())
+        for(auto& j : i->getGraph())
             m_points.push_back(j);
+    std::sort(m_points.begin(), m_points.end());
     for(int i=0;i<m_points.size();i++)
         for(int j=i+1;j<m_points.size();j++) {
-            if (m_points[i].x >= m_points[j].x)
-                std::swap(m_points[i], m_points[j]);
-            if (m_points[i].x == m_points[j].x && m_points[i].y == m_points[j].y) {
+            if (m_points[i] == m_points[j]) {
                 m_points.erase(m_points.begin() + j);
-                i--;break;
             }
         }
+    for(auto& i : m_points)
+        m_base.push_back(i);
 }
 double quadrilateral::getSquare(){
     double AB = m_sides[0]->getLength(), BC = m_sides[1]->getLength(),CD = m_sides[2]->getLength(),AD = m_sides[3]->getLength();
     double p = (AB+BC+CD+AD)/2;
     double cosAngle = cos((m_sides[0]->getAngle(m_sides[1])+m_sides[2]->getAngle(m_sides[3]))/2);
     return sqrt((p-AB) * (p-BC) *(p-CD)*(p-AD)-AB * BC*CD*AD* pow(cosAngle,2));
+}
+
+circle::circle(Point center,double R){
+    m_center = center;
+    m_radius = R;
+    double tmp;
+    for(double i = m_center.x - R;i<=m_center.x+R;i+=m_frequency)
+    {
+        tmp = sqrt(m_radius*m_radius - pow((i-m_center.x),2));
+        m_points.push_back({i,m_center.y - tmp});
+        m_points.push_back({i,m_center.y+tmp});
+    }
+    for(int i=0;i<m_points.size();i++)
+        for(int j=i+1;j<m_points.size();j++) {
+            if (m_points[i].x == m_points[j].x && m_points[i].y == m_points[j].y) {
+                m_points.erase(m_points.begin() + j);
+                i--;break;
+            }
+        }
+    for(auto& i : m_points)
+        m_base.push_back(i);
+}
+void circle::setFrequency(double frequency){
+    m_frequency = abs(frequency);
+    m_points.clear();
+    double tmp;
+    for(double i = m_center.x - m_radius;i<=m_center.x+m_radius;i+=m_frequency)
+    {
+        tmp = sqrt(m_radius*m_radius - pow((i-m_center.x),2));
+        m_points.push_back({i,m_center.y - tmp});
+        m_points.push_back({i,m_center.y+tmp});
+    }
+    for(int i=0;i<m_points.size();i++)
+        for(int j=i+1;j<m_points.size();j++) {
+            if (m_points[i].x == m_points[j].x && m_points[i].y == m_points[j].y) {
+                m_points.erase(m_points.begin() + j);
+                i--;break;
+            }
+        }
+}
+double circle::getSquare(){return acos(-1)*m_radius*m_radius;}
+double circle::getPerimeter(){
+    return 2*acos(-1)*m_radius;
 }
