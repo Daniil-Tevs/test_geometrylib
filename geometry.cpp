@@ -316,7 +316,7 @@ double getSquare(Point A,Point B,Point C,Point D){
     double cosAngle = cos((tmpAB.getAngle(&tmpBC)+tmpCD.getAngle(&tmpAD))/2);
     return sqrt((p-AB) * (p-BC) *(p-CD)*(p-AD)-AB * BC*CD*AD* pow(cosAngle,2));}
 
-std::vector<Point> getIntersectionPoints(triangle* first, triangle* second)
+std::vector<Point> getIntersectionPoints(figure* first, figure* second)
 {
     std::vector<Point> inPoints;
     if(first->getType()!="circle" && second->getType()!="circle") {
