@@ -1,5 +1,18 @@
 #include "geometry.h"
 
+Point Point::operator+(const Point& A)
+{
+    this->x += A.x; this->y += A.y;
+    return *this;
+}
+Point Point::operator-(const Point& A){
+    this->x -= A.x; this->y -= A.y;
+    return *this;
+}
+bool Point::operator==(const Point& A) const {return (A.x == this->x) && (A.y == this->y);}
+bool Point::operator>(const Point& A) const {return (this->x>A.x);}
+bool Point::operator<(const Point& A) const {return (this->x < A.x);}
+
 graph::graph( Point A, Point B, std::pair<double,double> D_x)
 {
     m_D_x = D_x;
@@ -15,14 +28,14 @@ graph::graph( Point A, Point B, std::pair<double,double> D_x)
         collinear = std::make_pair(A.x - B.x,A.y-B.y);
     }
     if(collinear.first!=0)
-        for(double i = D_x.first ;i<=D_x.second;i+=m_frequency)
+        for(double i = D_x.first ;i<D_x.second;i+=m_frequency)
             m_points.push_back({double(i),function(i)});
     else
     {
         m_D_x.first = (A.y<=B.y)?A.y:B.y;
         m_D_x.second = (A.y>=B.y)?A.y:B.y;
-        for(double i = m_D_x.first ;i<=m_D_x.second;i+=m_frequency)
-            m_points.push_back({0,i});
+        for(double i = m_D_x.first ;i<m_D_x.second;i+=m_frequency)
+            m_points.push_back({A.x,i});
     }
 
 }
@@ -37,7 +50,7 @@ void graph::setFrequency(double frequency){
             m_points.push_back({double(i),function(i)});
     else
         for(double i = m_D_x.first ;i<=m_D_x.second;i+=m_frequency)
-            m_points.push_back({0,i});
+            m_points.push_back({M_0.x,i});
 }
 
 double graph::function(double x) const {return collinear.second * (x-M_0.x)/collinear.first + M_0.y;}
@@ -86,6 +99,43 @@ double segment::getAngle(segment* line) const
 
 std::pair<Point,Point> segment::getVertices(){return std::make_pair(m_A,m_B);}
 
+std::vector<Point> segment::getIntersectionPoints(const segment& segment) const
+{
+    std::vector<Point> inPoints;
+    for (auto &i: m_points)
+        for (auto &j: segment.m_points)
+            if (abs(i.x - j.x) < m_accuracy && abs(i.y - j.y) < m_accuracy)
+                inPoints.push_back(i);
+    std::reverse(inPoints.begin(), inPoints.end());
+    if(!inPoints.empty()) {
+        int t=0;
+        while(t<2) {
+            for (int i = 0; i < inPoints.size() - 1; i++)
+                for (int j = i + 1; j < inPoints.size(); j++) {
+                    if (abs(inPoints[i].x - inPoints[j].x) < m_accuracy &&
+                        abs(inPoints[i].y - inPoints[j].y) < m_accuracy) {
+                        inPoints.erase(inPoints.begin() + j);
+                        break;
+                    }
+                    if (round(inPoints[i].x) == round(inPoints[j].x) &&
+                        round(inPoints[i].y) == round(inPoints[j].y)) {
+                        int tmpX = round(inPoints[i].x);
+                        int tmpY = round(inPoints[i].y);
+                        if(abs(tmpX-inPoints[i].x)<=m_accuracy*5)
+                            inPoints[i].x = round(inPoints[i].x);
+                        if(abs(tmpY -  inPoints[i].y)<=m_accuracy*5)
+                            inPoints[i].y = round(inPoints[i].y);
+                        inPoints.erase(inPoints.begin() + j);
+                        break;
+                    }
+                }
+            t++;
+        }
+    }
+
+    return inPoints;
+}
+
 
 std::vector<Point> figure::getGraph(){return m_points;}
 double figure::getPerimeter(){
@@ -118,11 +168,14 @@ void figure::setFrequency(double frequency)
             }
         }
 }
+void figure::setAccuracy(double accuracy){m_accuracy = accuracy;}
 Point figure::getCenter(){return m_center;}
 std::vector<Point> figure::getVertices(){return m_vertices;}
+std::string figure::getType(){return m_type;}
 
 triangle::triangle(Point A, Point B, Point C)
 {
+    m_type = "triangle";
     m_vertices.push_back(A);
     m_vertices.push_back(B);
     m_vertices.push_back(C);
@@ -154,6 +207,7 @@ double triangle::getSquare()
 
 quadrilateral::quadrilateral(Point A,Point B, Point C, Point D)
 {
+    m_type = "quadrilateral";
     m_vertices.push_back(A);
     m_vertices.push_back(B);
     m_vertices.push_back(C);
@@ -167,7 +221,7 @@ quadrilateral::quadrilateral(Point A,Point B, Point C, Point D)
     m_sides.push_back(new segment(A,B));
     m_sides.push_back(new segment(B,C));
     m_sides.push_back(new segment(C,D));
-    m_sides.push_back(new segment(A,D));
+    m_sides.push_back(new segment(D,A));
     for(auto& i : m_vertices)
         m_points.push_back(i);
     for(auto& i : m_sides)
@@ -191,6 +245,7 @@ double quadrilateral::getSquare(){
 }
 
 circle::circle(Point center,double R){
+    m_type = "circle";
     m_center = center;
     m_radius = R;
     double tmp;
@@ -200,6 +255,18 @@ circle::circle(Point center,double R){
         m_points.push_back({i,m_center.y - tmp});
         m_points.push_back({i,m_center.y+tmp});
     }
+    m_points.push_back({m_center.x+R * cos(0),m_center.y+R * sin(0)});
+    m_points.push_back({m_center.x+R * cos(acos(-1)/2),m_center.y+R * sin(acos(-1)/2)});
+    m_points.push_back({m_center.x+R * cos(acos(-1)),m_center.y+R * sin(acos(-1))});
+    m_points.push_back({m_center.x+R * cos(3*acos(-1)/2),m_center.y+R * sin(3*acos(-1)/2)});
+//    double tmpX,tmpY;
+//    for(double fi = 0;fi<=2*acos(-1);fi+=m_frequency)
+//    {
+//        tmpX = R*cos(fi);
+//        tmpY = R*sin(fi);
+//        m_points.push_back({tmpX, tmpY});
+//    }
+
     for(int i=0;i<m_points.size();i++)
         for(int j=i+1;j<m_points.size();j++) {
             if (m_points[i].x == m_points[j].x && m_points[i].y == m_points[j].y) {
@@ -220,6 +287,10 @@ void circle::setFrequency(double frequency){
         m_points.push_back({i,m_center.y - tmp});
         m_points.push_back({i,m_center.y+tmp});
     }
+    m_points.push_back({m_center.x+m_radius * cos(0),m_center.y+m_radius * sin(0)});
+    m_points.push_back({m_center.x+m_radius * cos(acos(-1)/2),m_center.y+m_radius * sin(acos(-1)/2)});
+    m_points.push_back({m_center.x+m_radius * cos(acos(-1)),m_center.y+m_radius * sin(acos(-1))});
+    m_points.push_back({m_center.x+m_radius * cos(3*acos(-1)/2),m_center.y+m_radius * sin(3*acos(-1)/2)});
     for(int i=0;i<m_points.size();i++)
         for(int j=i+1;j<m_points.size();j++) {
             if (m_points[i].x == m_points[j].x && m_points[i].y == m_points[j].y) {
@@ -231,4 +302,102 @@ void circle::setFrequency(double frequency){
 double circle::getSquare(){return acos(-1)*m_radius*m_radius;}
 double circle::getPerimeter(){
     return 2*acos(-1)*m_radius;
+}
+double getSquare(Point A,Point B,Point C){
+    double AB = sqrt(pow((A.x-B.x),2)+pow((A.y-B.y),2));
+    double BC = sqrt(pow((B.x-C.x),2)+pow((B.y-C.y),2));
+    double AC = sqrt(pow((A.x-C.x),2)+pow((A.y-C.y),2));
+    double p = (AB+BC+AC)/2;
+    return sqrt(p*(p-AB) * (p-BC) *(p-AC));}
+double getSquare(Point A,Point B,Point C,Point D){
+    segment tmpAB{A,B},tmpBC{B,C},tmpCD{C,D},tmpAD{A,D};
+    double AB = tmpAB.getLength(), BC = tmpBC.getLength(),CD = tmpCD.getLength(),AD = tmpAD.getLength();
+    double p = (AB+BC+CD+AD)/2;
+    double cosAngle = cos((tmpAB.getAngle(&tmpBC)+tmpCD.getAngle(&tmpAD))/2);
+    return sqrt((p-AB) * (p-BC) *(p-CD)*(p-AD)-AB * BC*CD*AD* pow(cosAngle,2));}
+
+std::vector<Point> getIntersectionPoints(triangle* first, triangle* second)
+{
+    std::vector<Point> inPoints;
+    if(first->getType()!="circle" && second->getType()!="circle") {
+        for (auto &i: second->getBasePoint())
+            for (auto &j: first->getBasePoint())
+                if (abs(i.x - j.x) < basic_frequency * 10 && abs(i.y - j.y) < basic_frequency * 10)
+                    inPoints.push_back(i);
+    }
+    else {
+        for (auto &i: second->getBasePoint())
+            for (auto &j: first->getBasePoint())
+                if (abs(i.x - j.x) < basic_frequency && abs(i.y - j.y) < basic_frequency)
+                    inPoints.push_back(i);
+    }
+    std::reverse(inPoints.begin(), inPoints.end());
+    if(!inPoints.empty()) {
+        int t=0;
+        while(t<10) {
+            for (int i = 0; i < inPoints.size() - 1; i++)
+                for (int j = i + 1; j < inPoints.size(); j++) {
+                    if (abs(inPoints[i].x - inPoints[j].x) < basic_frequency &&
+                        abs(inPoints[i].y - inPoints[j].y) < basic_frequency) {
+                        inPoints.erase(inPoints.begin() + j);
+                        break;
+                    }
+                    if (inPoints.size()>2 && round(inPoints[i].x) == round(inPoints[j].x) &&
+                        round(inPoints[i].y) == round(inPoints[j].y) ) {
+                        int tmpX = round(inPoints[i].x);
+                        int tmpY = round(inPoints[i].y);
+                        if(abs(tmpX-inPoints[i].x)<=basic_frequency)
+                            inPoints[i].x = round(inPoints[i].x);
+                        if(abs(tmpY -  inPoints[i].y)<=basic_frequency)
+                            inPoints[i].y = round(inPoints[i].y);
+                        inPoints.erase(inPoints.begin() + j);
+                        break;
+                    }
+                }
+            t++;
+        }
+    }
+    return  inPoints;
+}
+double getIntersectionSquare(triangle* first, triangle* second) {
+    std::vector inPoints = getIntersectionPoints(first, second);
+    if (inPoints.size() == 0)
+        return 0;
+    int tmp = inPoints.size();
+    for (auto &i: second->getVertices()) {
+        double tmp1 = getSquare(first->getVertices()[0],first->getVertices()[1],i);
+        double tmp2 = getSquare(first->getVertices()[0],first->getVertices()[2],i);
+        double tmp3 = getSquare(first->getVertices()[1],first->getVertices()[2],i);
+        double a = first->getSquare();
+        if(abs(tmp1+tmp2+tmp3-first->getSquare())<basic_frequency)
+            inPoints.push_back(i);
+    }
+    if(inPoints.size()==tmp)
+        for (auto &i: first->getVertices()) {
+            double tmp1 = getSquare(second->getVertices()[0],second->getVertices()[1],i);
+            double tmp2 = getSquare(second->getVertices()[0],second->getVertices()[2],i);
+            double tmp3 = getSquare(second->getVertices()[1],second->getVertices()[2],i);
+            double a = second->getSquare();
+            double b = tmp1+ tmp2+tmp3;
+            if(abs(tmp1+tmp2+tmp3-second->getSquare())<basic_frequency)
+                inPoints.push_back(i);
+        }
+    for (int i = 0; i < inPoints.size() - 1; i++)
+        for (int j = i + 1; j < inPoints.size(); j++) {
+            if (abs(inPoints[i].x - inPoints[j].x) < basic_frequency &&
+                abs(inPoints[i].y - inPoints[j].y) < basic_frequency) {
+                inPoints.erase(inPoints.begin() + j);
+                break;
+            }}
+    std::sort(inPoints.begin(), inPoints.end());
+
+    if(inPoints.size()==3)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2]);
+    else if(inPoints.size()==4)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]);
+    else if(inPoints.size()==5)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2]) + getSquare(inPoints[1],inPoints[2],inPoints[3],inPoints[4]);
+    else if(inPoints.size()==6)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]) + getSquare(inPoints[2],inPoints[3],inPoints[4],inPoints[5]);
+
 }
