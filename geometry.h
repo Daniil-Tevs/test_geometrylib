@@ -5,9 +5,12 @@
 #include <vector>
 #include <algorithm>
 #define basic_frequency 0.001
-class triangle;
-class quadrilateral;
-class circle;
+#define basic_accuracy 0.001
+
+///Надо добавит проверку для треугольника принадл одной прямой
+///Проверку для четырехугольника
+///настроить проверку на пересечение
+///добавить getIntr для круга и прямоугольников
 
 struct Point{
     double x;
@@ -29,9 +32,11 @@ public:
     ~graph() = default;
     std::vector<Point> getGraph();
     void setFrequency(double frequency);
+    std::vector<Point> getBasePoints();
 protected:
     Point M_0;
     std::vector<Point> m_points;
+    std::vector<Point> m_base;
     double m_frequency = basic_frequency;
     double m_accuracy =basic_frequency;
     std::pair<double,double> collinear;
@@ -51,6 +56,7 @@ private:
     double m_length;
     Point m_A; Point m_B;
 };
+
 /// CLass figure - is parent class for shapes
 // setFrequency() - setting the frequency of points
 // getGraph() - returns the points of the shape
@@ -113,8 +119,18 @@ public:
 private:
     double m_radius;
 };
+
+// Можно оставить
+double getLength(Point A,Point B);
+double getAngle(segment* AB,segment* CD);
+double getAngleSegments(Point A,Point B,Point C,Point D);
+double getPerimeter(Point A,Point B,Point C);
+double getPerimeter(Point A,Point B,Point C, Point D);
 double getSquare(Point A,Point B,Point C);
 double getSquare(Point A,Point B,Point C,Point D);
+///До сюда
+
+std::vector<Point> getIntersectionPoints(segment* first, segment* segment);
 std::vector<Point> getIntersectionPoints(triangle* first, triangle* second);
 double getIntersectionSquare(triangle* first, triangle* second);
 

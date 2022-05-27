@@ -12,5 +12,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 
 add_executable("${PROJECT_NAME}" main.cpp
-		geometry.h geometry.cpp)
+		geometry.h geometry.cpp graph.cpp shapes.cpp)
 

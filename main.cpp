@@ -20,5 +20,7 @@ int main()
 //    for(auto& i : tmp)
 //        std::cout<<i<<std::endl;
 //    std::cout<<round(-2.121);
-    std::cout<<getIntersectionSquare(&test,&r);
+    segment AB{{-1,-1},{1,1}}, CD{{-1,1},{0,0}};
+//    std::cout<<getAngleSegments({-1,-1}, {1,1}, {-1,1},{0,0});
+    std::cout<<getAngle(&AB,&CD);
 }
