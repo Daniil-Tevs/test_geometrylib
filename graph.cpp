@@ -16,7 +16,7 @@ graph::graph( Point A, Point B, std::pair<double,double> D_x)
     }
     if(collinear.first!=0)
         for(double i = D_x.first ;i<D_x.second;i+=m_frequency)
-            m_points.push_back({double(i),function(i)});
+            m_points.push_back({double(i),functionY(i)});
     else
     {
         m_D_x.first = (A.y<=B.y)?A.y:B.y;
@@ -24,31 +24,20 @@ graph::graph( Point A, Point B, std::pair<double,double> D_x)
         for(double i = m_D_x.first ;i<m_D_x.second;i+=m_frequency)
             m_points.push_back({A.x,i});
     }
-    for(auto& i : m_points)
-        m_base.push_back(i);
 }
 
 std::vector<Point> graph::getGraph(){return m_points;}
-std::vector<Point> graph::getBasePoints() {return m_base;}
 double segment::getLength() const {return m_length;}
 
-void graph::setFrequency(double frequency){
-    m_frequency = abs(frequency);
-    m_points.clear();
-    if(collinear.first!=0)
-        for(double i = m_D_x.first ;i<=m_D_x.second;i+=m_frequency)
-            m_points.push_back({double(i),function(i)});
-    else
-        for(double i = m_D_x.first ;i<=m_D_x.second;i+=m_frequency)
-            m_points.push_back({M_0.x,i});
-}
-
-double graph::function(double x) const {return collinear.second * (x-M_0.x)/collinear.first + M_0.y;}
+std::pair<double,double> graph::getCollinear(){return collinear;}
+double graph::functionY(double x) const {return collinear.second * (x-M_0.x)/collinear.first + M_0.y;}
 
 segment::segment(Point A, Point B) : graph(A,B,{(A.x<=B.x)?A.x:B.x,(B.x<=A.x)?A.x:B.x}) {
     m_length = sqrt(pow(A.x - B.x,2)+pow(A.y - B.y,2));
     m_A = A; m_B = B;
 }
+double graph::functionX(double y) const {return collinear.first * (y-M_0.y)/collinear.second + M_0.x;}
+
 
 double segment::getAngle(segment* line) const
 {
