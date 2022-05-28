@@ -127,7 +127,9 @@ double getSquare(Point A,Point B,Point C,Point D);
 
 std::vector<Point> getIntersectionPoints(segment* AB, segment* CD);
 std::vector<Point> getIntersectionPoints(triangle* first, triangle* second);
+std::vector<Point> getIntersectionPoints(quadrilateral* first, quadrilateral* second);
 double getIntersectionSquare(triangle* first, triangle* second);
+double getIntersectionSquare(quadrilateral* first, quadrilateral* second);
 
 
 #endif //GEOMETRY_LIBRARY_H

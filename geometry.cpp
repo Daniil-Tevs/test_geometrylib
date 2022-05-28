@@ -148,6 +148,9 @@ std::vector<Point> getIntersectionPoints(segment* AB, segment* CD)
     std::vector<Point> inPoints;
     if(AB->getCollinear().first == 0 && CD->getCollinear().first!=0)
     {
+        if(AB->getVertices().first.x<std::min(CD->getVertices().first.x,CD->getVertices().second.x) ||
+           AB->getVertices().first.x>std::max(CD->getVertices().first.x,CD->getVertices().second.x))
+            return inPoints;
         double tmpY = CD->functionY(AB->getVertices().first.x);
         double a = std::min(AB->getVertices().first.y,AB->getVertices().second.y);
         double b = std::max(AB->getVertices().first.y,AB->getVertices().second.y);
@@ -157,6 +160,9 @@ std::vector<Point> getIntersectionPoints(segment* AB, segment* CD)
     }
     else if(CD->getCollinear().first == 0 && AB->getCollinear().first!=0)
     {
+        if(CD->getVertices().first.x<std::min(AB->getVertices().first.x,AB->getVertices().second.x) ||
+                CD->getVertices().first.x>std::max(AB->getVertices().first.x,AB->getVertices().second.x))
+                return inPoints;
         double tmpY = AB->functionY(CD->getVertices().first.x);
         double a = std::min(CD->getVertices().first.y,CD->getVertices().second.y);
         double b = std::max(CD->getVertices().first.y,CD->getVertices().second.y);
@@ -166,6 +172,8 @@ std::vector<Point> getIntersectionPoints(segment* AB, segment* CD)
     }
     else if(AB->getCollinear().first == 0 && CD->getCollinear().first==0)
     {
+        if(AB->getVertices().first.x!=CD->getVertices().first.x)
+            return inPoints;
         std::vector<Point> tmp;
         tmp.push_back(AB->getVertices().first); tmp.push_back(AB->getVertices().second);
         tmp.push_back(CD->getVertices().first); tmp.push_back(CD->getVertices().second);
@@ -219,7 +227,117 @@ std::vector<Point> getIntersectionPoints(triangle* first, triangle* second)
     std::sort(inPoints.begin(), inPoints.end());
     return  inPoints;
 }
+std::vector<Point> getIntersectionPoints(quadrilateral* first, quadrilateral* second)
+{
+    std::vector<Point> inPoints;
+    for(auto& i : first->getSides())
+        for(auto& j : second->getSides())
+            for(auto& k : getIntersectionPoints(i,j))
+                inPoints.push_back(k);
+    for(int i=0;i<inPoints.size()-1;i++)
+        for(int j=i+1;j<inPoints.size();j++) {
+            if (abs(inPoints[i].x - inPoints[j].x) <= basic_frequency*10 &&
+                abs(inPoints[i].y - inPoints[j].y) <= basic_frequency*10 ) {
+                inPoints.erase(inPoints.begin() + j);
+                j--;
+            }
+        }
+    std::sort(inPoints.begin(), inPoints.end());
+    return  inPoints;
+}
 
+double getIntersectionSquare(triangle* first, triangle* second) {
+    std::vector<Point> inPoints = getIntersectionPoints(first, second);
+    int tmp = inPoints.size();
+
+    for (auto &i: second->getVertices()) {
+        if(std::find(inPoints.begin(), inPoints.end(), i) == inPoints.end()) {
+            double tmp1 = getSquare(first->getVertices()[0], first->getVertices()[1], i);
+            double tmp2 = getSquare(first->getVertices()[0], first->getVertices()[2], i);
+            double tmp3 = getSquare(first->getVertices()[1], first->getVertices()[2], i);
+            if (abs(tmp1 + tmp2 + tmp3 - first->getSquare()) < basic_frequency)
+                inPoints.push_back(i);
+        }
+    }
+    if(inPoints.size()==tmp)
+        for (auto &i: first->getVertices()) {
+            if(std::find(inPoints.begin(), inPoints.end(), i) == inPoints.end()) {
+                double tmp1 = getSquare(second->getVertices()[0], second->getVertices()[1], i);
+                double tmp2 = getSquare(second->getVertices()[0], second->getVertices()[2], i);
+                double tmp3 = getSquare(second->getVertices()[1], second->getVertices()[2], i);
+                if (abs(tmp1 + tmp2 + tmp3 - second->getSquare()) < basic_frequency)
+                    inPoints.push_back(i);
+            }
+        }
+
+    std::sort(inPoints.begin(), inPoints.end());
+    for(int i=0;i<inPoints.size()-1;i++)
+        for(int j=i+1;j<inPoints.size();j++)
+        {
+            if(inPoints[i].x == inPoints[j].x)
+                if(inPoints[i].y>inPoints[j].y)
+                    std::swap(inPoints[i],inPoints[j]);
+        }
+    if(inPoints.size()==3)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2]);
+    else if(inPoints.size()==4)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]);
+    else if(inPoints.size()==5)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2]) + getSquare(inPoints[1],inPoints[2],inPoints[4],inPoints[3]);
+    else if(inPoints.size()==6)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]) + getSquare(inPoints[2],inPoints[3],inPoints[4],inPoints[5]);
+    return 0;
+}
+double getIntersectionSquare(quadrilateral* first, quadrilateral* second) {
+    std::vector<Point> inPoints = getIntersectionPoints(first, second);
+    int tmp = inPoints.size();
+
+    for (auto &i: second->getVertices()) {
+        if(std::find(inPoints.begin(), inPoints.end(), i) == inPoints.end()) {
+            double tmp1 = getSquare(first->getVertices()[0], first->getVertices()[1], i);
+            double tmp2 = getSquare(first->getVertices()[1], first->getVertices()[2], i);
+            double tmp3 = getSquare(first->getVertices()[2], first->getVertices()[3], i);
+            double tmp4 = getSquare(first->getVertices()[3], first->getVertices()[0], i);
+            if (abs(tmp1 + tmp2 + tmp3 + tmp4 - first->getSquare()) < basic_frequency)
+                inPoints.push_back(i);
+        }
+    }
+    for (auto &i: first->getVertices()) {
+        if(std::find(inPoints.begin(), inPoints.end(), i) == inPoints.end()) {
+            double tmp1 = getSquare(second->getVertices()[0], second->getVertices()[1], i);
+            double tmp2 = getSquare(second->getVertices()[1], second->getVertices()[2], i);
+            double tmp3 = getSquare(second->getVertices()[2], second->getVertices()[3], i);
+            double tmp4 = getSquare(second->getVertices()[3], second->getVertices()[0], i);
+            if (abs(tmp1 + tmp2 + tmp3 + tmp4 - second->getSquare()) < basic_frequency)
+                inPoints.push_back(i);
+        }
+    }
+
+    std::sort(inPoints.begin(), inPoints.end());
+    for(int i=0;i<inPoints.size()-1;i++)
+        for(int j=i+1;j<inPoints.size();j++)
+        {
+            if(inPoints[i].x == inPoints[j].x)
+                if(inPoints[i].y>inPoints[j].y)
+                    std::swap(inPoints[i],inPoints[j]);
+        }
+
+    if(inPoints.size()==3)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2]);
+    else if(inPoints.size()==4)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]);
+    else if(inPoints.size()==5)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2]) + getSquare(inPoints[1],inPoints[2],inPoints[4],inPoints[3]);
+    else if(inPoints.size()==6)
+        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]) + getSquare(inPoints[2],inPoints[3],inPoints[4],inPoints[5]);
+    else if(inPoints.size() == 7)
+    {}
+    else if(inPoints.size() == 8)
+    {
+
+    }
+    return 0;
+}
 //std::vector<Point> getIntersectionPoints(figure* first, figure* second)
 //{
 //    std::vector<Point> inPoints;
@@ -263,49 +381,6 @@ std::vector<Point> getIntersectionPoints(triangle* first, triangle* second)
 //    }
 //    return  inPoints;
 //}
-//
-double getIntersectionSquare(triangle* first, triangle* second) {
-    std::vector inPoints = getIntersectionPoints(first, second);
-    int tmp = inPoints.size();
-
-    for (auto &i: second->getVertices()) {
-        if(std::find(inPoints.begin(), inPoints.end(), i) == inPoints.end()) {
-            double tmp1 = getSquare(first->getVertices()[0], first->getVertices()[1], i);
-            double tmp2 = getSquare(first->getVertices()[0], first->getVertices()[2], i);
-            double tmp3 = getSquare(first->getVertices()[1], first->getVertices()[2], i);
-            if (abs(tmp1 + tmp2 + tmp3 - first->getSquare()) < basic_frequency)
-                inPoints.push_back(i);
-        }
-    }
-    if(inPoints.size()==tmp)
-        for (auto &i: first->getVertices()) {
-            if(std::find(inPoints.begin(), inPoints.end(), i) == inPoints.end()) {
-                double tmp1 = getSquare(second->getVertices()[0], second->getVertices()[1], i);
-                double tmp2 = getSquare(second->getVertices()[0], second->getVertices()[2], i);
-                double tmp3 = getSquare(second->getVertices()[1], second->getVertices()[2], i);
-                if (abs(tmp1 + tmp2 + tmp3 - second->getSquare()) < basic_frequency)
-                    inPoints.push_back(i);
-            }
-        }
-
-    std::sort(inPoints.begin(), inPoints.end());
-    for(int i=0;i<inPoints.size()-1;i++)
-        for(int j=i+1;j<inPoints.size();j++)
-        {
-            if(inPoints[i].x == inPoints[j].x)
-                if(inPoints[i].y>inPoints[j].y)
-                    std::swap(inPoints[i],inPoints[j]);
-        }
-    if(inPoints.size()==3)
-        return getSquare(inPoints[0],inPoints[1],inPoints[2]);
-    else if(inPoints.size()==4)
-        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]);
-    else if(inPoints.size()==5)
-        return getSquare(inPoints[0],inPoints[1],inPoints[2]) + getSquare(inPoints[1],inPoints[2],inPoints[4],inPoints[3]);
-    else if(inPoints.size()==6)
-        return getSquare(inPoints[0],inPoints[1],inPoints[2],inPoints[3]) + getSquare(inPoints[2],inPoints[3],inPoints[4],inPoints[5]);
-
-}
 //std::vector<Point> getIntersectionPoints(segment* first, segment* segment)
 //{
 //    std::vector<Point> inPoints;
