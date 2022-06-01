@@ -24,7 +24,10 @@ struct Point{
         return os  << '(' << A.x << ';' << A.y << ')';
     }
 };
-
+double getLengthArc(double radius)
+{return 2*acos(-1)*pow(radius,2);}
+double getSquare(double radius)
+{return acos(-1)*pow(radius,2);}
 class graph
 {
 public:
@@ -58,8 +61,7 @@ private:
 };
 
 /// CLass figure - is parent class for shapes
-// setFrequency() - setting the frequency of points
-// getGraph() - returns the points of the shape
+// getPoints() - returns the points of the shape
 // getCenter() - returns the center of this shape
 // getSquare() - returns square of this shape
 // getPerimeter() - returns perimeter of shape
@@ -71,7 +73,7 @@ public:
     std::vector<Point> getPoints();
     Point getCenter();
     std::vector<Point> getVertices();
-    std::vector<segment*> getSides() const {return m_sides;}
+    std::vector<segment*> getSides() const;
     std::string getType();
     virtual double getSquare() = 0;
     virtual double getPerimeter();
@@ -111,11 +113,12 @@ public:
 
     double getSquare() override;
     double getPerimeter() override;
+    double getRadius() const;
+    std::pair<double,double> function(double x);
 private:
     double m_radius;
 };
 
-// Можно оставить
 double getLength(Point A,Point B);
 double getAngle(segment* AB,segment* CD);
 double getAngleSegments(Point A,Point B,Point C,Point D);
@@ -123,13 +126,22 @@ double getPerimeter(Point A,Point B,Point C);
 double getPerimeter(Point A,Point B,Point C, Point D);
 double getSquare(Point A,Point B,Point C);
 double getSquare(Point A,Point B,Point C,Point D);
-///До сюда
 
 std::vector<Point> getIntersectionPoints(segment* AB, segment* CD);
+//Добавить совпадение фигуры и сторон для нахождения площади. Поправить нахождение площади 5-6 угол
 std::vector<Point> getIntersectionPoints(triangle* first, triangle* second);
+//Добавить совпадение фигуры и сторон для нахождения площади
+//+случай 7 и 8 угольника
 std::vector<Point> getIntersectionPoints(quadrilateral* first, quadrilateral* second);
+std::vector<Point> getIntersectionPoints(circle* first, circle* second);
+std::vector<Point> getIntersectionPoints(segment* AB, circle* shape);
+std::vector<Point> getIntersectionPoints(triangle* first, circle* second);
+std::vector<Point> getIntersectionPoints(quadrilateral* first, circle* second);
+
 double getIntersectionSquare(triangle* first, triangle* second);
 double getIntersectionSquare(quadrilateral* first, quadrilateral* second);
-
-
+double getIntersectionSquare(circle* first, circle* second);
+double getIntersectionSquare(triangle* first, quadrilateral* second);
+double getIntersectionSquare(triangle* first, circle* second);
+double getIntersectionSquare(quadrilateral* first, circle* second);
 #endif //GEOMETRY_LIBRARY_H

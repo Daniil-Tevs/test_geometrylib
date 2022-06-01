@@ -11,6 +11,7 @@ Point figure::getCenter(){return m_center;}
 std::string figure::getType(){return m_type;}
 std::vector<Point> figure::getPoints(){return m_points;}
 std::vector<Point> figure::getVertices(){return m_vertices;}
+std::vector<segment*> figure::getSides() const {return m_sides;}
 
 triangle::triangle(Point A, Point B, Point C)
 {
@@ -115,5 +116,11 @@ circle::circle(Point center,double R){
 double circle::getSquare(){return acos(-1)*m_radius*m_radius;}
 double circle::getPerimeter(){
     return 2*acos(-1)*m_radius;
+}
+double circle::getRadius() const{return m_radius;}
+std::pair<double,double> circle::function(double x)
+{
+    double tmp = sqrt(m_radius*m_radius - pow((x-m_center.x),2));
+    return std::make_pair(m_center.y+tmp,m_center.y - tmp);
 }
 
